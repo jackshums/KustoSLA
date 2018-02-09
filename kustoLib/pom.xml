@@ -5,8 +5,7 @@
 	<artifactId>kusto</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>${project.artifactId}</name>
-	<description>My wonderfull scala app</description>
-	<inceptionYear>2010</inceptionYear>
+	<inceptionYear>2017</inceptionYear>
 	<licenses>
 		<license>
 			<name>My License</name>
@@ -39,7 +38,12 @@
 		<dependency>
 			<groupId>org.json4s</groupId>
 			<artifactId>json4s-jackson_2.11</artifactId>
-			<version>3.5.3</version>
+			<version>3.2.11</version>
+		</dependency>
+		<dependency>
+			<groupId>org.json4s</groupId>
+			<artifactId>json4s-native_2.11</artifactId>
+			<version>3.2.11</version>
 		</dependency>
 		<dependency>
 			<groupId>com.microsoft.azure</groupId>
@@ -114,6 +118,21 @@
 					</includes>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.6</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
+	<description>Scala library for interacting with Kusto Service</description>
 </project>

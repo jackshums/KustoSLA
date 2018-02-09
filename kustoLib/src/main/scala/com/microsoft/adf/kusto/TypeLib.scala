@@ -4,15 +4,18 @@ import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import scala.util.{ Try, Success, Failure }
+import org.apache.spark.sql.Dataset
 
 case class KustoColumnType(ColumnName: String, ColumnType: String, DataType: String)
 case class KustoTable(Columns: Array[KustoColumnType], Rows: Array[Array[String]], TableName: String)
 case class KustoTables(Tables: Array[KustoTable])
 case class KustoRecord(time: java.sql.Timestamp, api: String, status: Integer) extends java.io.Serializable
 case class Query(db: String, csl: String, properties: String)
-case class RawInput(cluster: String, database: String, startTime: String, endTime: String, interval: Long)
-case class SLASpec(cluster: String, database: String, startTime: java.sql.Timestamp, endTime: java.sql.Timestamp, interval: Long)
-case class SLAWindow(start: Timestamp, end: Timestamp)
+case class RawInput(cluster: String, database: String, startTime: String, endTime: String, interval: Integer)
+case class SLASpec(cluster: String, database: String, startTime: java.sql.Timestamp, endTime: java.sql.Timestamp, interval: Integer)
+case class TWindow(start: Timestamp, end: Timestamp)
+case class SLAOutput(window:TWindow, SLA:Boolean)
+case class SLAComputeInfo(input:SLASpec, rows: Dataset[String])
 
 object TypeLib extends App {
 
@@ -22,7 +25,7 @@ object TypeLib extends App {
   def statusToInt(str: String): Integer = str match { case vstr if isEmpty(vstr) => 0; case _ => Integer.parseInt(str) }
 
   def toTimestamp = (time: String) => {
-    //val time = "2017-12-27 19:35:00.0"
+    //val time = "2017-12-27 19:35:00"
     //Timestamp.valueOf(time)
     new Timestamp(ft.parse(time).getTime)
   }
@@ -36,8 +39,9 @@ object TypeLib extends App {
       }
     }
   }
-  
-  def roundUpInterval(input: java.util.Date): java.util.Date = {
+
+  // the boundary time has to be aligned to 5 minutes multiply
+  def roundUpInterval(input: Timestamp): Timestamp = {
     val calendar = Calendar.getInstance()
     calendar.setTime(input)
     val minutes = calendar.get(Calendar.MINUTE)
@@ -48,14 +52,32 @@ object TypeLib extends App {
     calendar.set(Calendar.MINUTE, roundUp)
     calendar.set(Calendar.SECOND, 0)
     calendar.set(Calendar.MILLISECOND, 0)
-    return calendar.getTime
+    new Timestamp(calendar.getTime.getTime)
   }
-  
+
+  def roundUpTimeString(input: String): String = {
+    val inputTime = TypeLib.ft.parse(input)
+    val resultTime = roundUpInterval(new Timestamp(inputTime.getTime))
+    TypeLib.ft.format(resultTime)
+  }
+
   def randomString(length: Int) = {
     val r = scala.util.Random.alphanumeric
     val sb = new StringBuilder
     r take length foreach sb.append
     sb.toString
+  }
+
+  def combine(root: String, file: String): String = {
+    java.nio.file.Paths.get(root, file).toString
+  }
+
+  def addHour(input: Timestamp): Timestamp = {
+    val cal = Calendar.getInstance()
+    cal.setTime(input)
+    val hours = cal.get(Calendar.HOUR)
+    cal.set(Calendar.HOUR, hours + 1)
+    new Timestamp(cal.getTime.getTime)
   }
 
   def sampleJson: String = """{
